@@ -1,0 +1,17 @@
+{
+    "id": "EnemyScaling",
+    "name": "敌人数值倍率",
+    "author": "分析学大王",
+    "description": "在选人界面用滑动条把敌人的生命值与伤害按 100%-500% 缩放。只作用于游戏自身的公共数值入口，因此对所有 mod 新增的怪物同样生效。",
+    "version": "0.1.0",
+    "min_game_version": "0.111.0",
+    "has_pck": false,
+    "has_dll": true,
+    "dependencies": [
+        {
+            "id": "STS2-RitsuLib",
+            "min_version": "0.6.7"
+        }
+    ],
+    "affects_gameplay": true
+}

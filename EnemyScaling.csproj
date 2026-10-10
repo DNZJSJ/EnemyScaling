@@ -1,0 +1,55 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    敌人数值倍率（EnemyScaling）—— 独立的通用 mod。
+
+    设计目标：**尽可能适配大部分 mod**。做法是只挂游戏自己的公共抽象点，
+    不识别、不枚举任何具体怪物类型，因此任何 mod 新增的怪都自动生效：
+      · 生命值 → MonsterModel.MinInitialHp / MaxInitialHp（所有怪都必须实现）
+      · 伤害   → Hook.ModifyDamage（全游戏唯一的伤害汇总点，带 dealer 来源）
+
+    依赖 RitsuLib：为了做可视化设置页（滑动条）。
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <LangVersion>13.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>EnemyScaling</AssemblyName>
+    <RootNamespace>EnemyScaling</RootNamespace>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <DefaultItemExcludes>$(DefaultItemExcludes);.godot\**;Build\**;bin\**;obj\**</DefaultItemExcludes>
+    <EnableDefaultItems>true</EnableDefaultItems>
+  </PropertyGroup>
+
+  <!-- 游戏路径由构建命令传入：-p:Sts2Dir="<游戏目录>" -->
+  <PropertyGroup>
+    <Sts2Dir Condition="'$(Sts2Dir)' == ''">$(STS2_GAME_DIR)</Sts2Dir>
+    <Sts2DataDir Condition="'$(Sts2DataDir)' == ''">$(Sts2Dir)\data_sts2_windows_x86_64</Sts2DataDir>
+    <!-- RitsuLib 是工坊 mod，路径可被覆盖（不同机器工坊目录不同） -->
+    <RitsuLibDir Condition="'$(RitsuLibDir)' == ''">$(Sts2Dir)\..\..\..\workshop\content\2868840\3747602295\compat\0.111.0</RitsuLibDir>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="sts2">
+      <HintPath>$(Sts2DataDir)\sts2.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="0Harmony">
+      <HintPath>$(Sts2DataDir)\0Harmony.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="GodotSharp">
+      <HintPath>$(Sts2DataDir)\GodotSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+    <Reference Include="STS2RitsuLib.Runtime">
+      <HintPath>$(RitsuLibDir)\STS2-RitsuLib.Runtime.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+</Project>

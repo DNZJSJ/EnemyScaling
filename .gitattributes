@@ -1,0 +1,12 @@
+# 统一换行，避免 Windows/Linux 协作时整文件 diff
+* text=auto eol=lf
+
+# ⚠ 构建脚本必须是 CRLF + 保留内容原样：
+#   PowerShell 含中文的 .ps1 依赖 BOM 与固定换行，被自动转换后可能解析失败（实际踩过）
+*.ps1 text eol=crlf
+
+# 二进制
+*.png binary
+*.zip binary
+*.pck binary
+*.dll binary

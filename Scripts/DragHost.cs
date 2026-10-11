@@ -71,6 +71,10 @@ public sealed partial class DragHost : Control
         //   下一帧尺寸就位后重算一次纠正。
         CallDeferred(nameof(ReapplyAfterLayout));
 
+        // 联机同步：客户端向主机要倍率、主机广播一次（单机下内部直接返回）
+        NetworkSync.Init();
+        NetworkSync.SyncIfNeeded();
+
         Log.Info($"[EnemyScaling] 面板已挂载（{ScalingConfig.Summary} · 停靠 {ScalingConfig.CornerLabel}）");
     }
 

@@ -192,6 +192,37 @@ internal static class CharacterSelectPanel
     /// <summary>由宿主在挂载后注入，供角落按钮触发重新定位。</summary>
     public static DragHost? HostRef { get; set; }
 
+    /// <summary>面板上的滑条，用于联机时把主机下发的值刷到界面上。</summary>
+    private static readonly Dictionary<string, (HSlider Slider, Label Value)> Sliders = new();
+
+    /// <summary>
+    /// 联机时把主机下发的倍率刷到滑条上。
+    ///
+    /// <para>⚠ 必须先摘掉 <c>ValueChanged</c> 再赋值，否则会触发一次
+    /// <c>SetHpPercent</c> → <c>NotifyChanged</c> → 又给主机发请求，形成回环。</para>
+    /// </summary>
+    public static void RefreshSliders()
+    {
+        ApplySlider("生命值", ScalingConfig.HpPercent);
+        ApplySlider("伤害", ScalingConfig.DamagePercent);
+    }
+
+    private static void ApplySlider(string key, int percent)
+    {
+        if (!Sliders.TryGetValue(key, out (HSlider Slider, Label Value) entry))
+        {
+            return;
+        }
+
+        if (!GodotObject.IsInstanceValid(entry.Slider))
+        {
+            return;
+        }
+
+        entry.Slider.SetValueNoSignal(percent);
+        entry.Value.Text = $"{percent}%";
+    }
+
     private static StyleBoxFlat BuildPanelStyle()
     {
         var style = new StyleBoxFlat
@@ -248,7 +279,13 @@ internal static class CharacterSelectPanel
             int percent = (int)v;
             value.Text = $"{percent}%";
             onChanged(percent);
+
+            // 联机时把改动同步出去（单机下这调用自己会直接返回）
+            NetworkSync.NotifyChanged();
         };
+
+        // 记下来，联机时主机下发的值要能刷到界面（用 SetValueNoSignal，避免回环）
+        Sliders[label] = (slider, value);
 
         parent.AddChild(row);
     }

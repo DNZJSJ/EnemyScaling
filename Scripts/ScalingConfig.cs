@@ -83,6 +83,18 @@ internal static class ScalingConfig
         return v / 100m;
     }
 
+    /// <summary>
+    /// 应用**联机主机**下发的倍率（只改内存，**不写盘**）。
+    ///
+    /// <para>为什么不写盘：主机的倍率是"本局规则"，不是客户端自己的偏好。
+    /// 若写盘，客户端本地设置会被别人的房规覆盖，下次单机时会莫名其妙变成房主的数值。</para>
+    /// </summary>
+    public static void ApplyFromHost(int hpPercent, int damagePercent)
+    {
+        HpPercent = Math.Clamp(hpPercent, MinPercent, MaxPercent);
+        DamagePercent = Math.Clamp(damagePercent, MinPercent, MaxPercent);
+    }
+
     private sealed class Dto
     {
         public int HpPercent { get; set; } = 100;

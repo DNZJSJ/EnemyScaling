@@ -23,18 +23,27 @@ internal static class ScalingConfig
     public static int DamagePercent { get; private set; } = 100;
 
     /// <summary>
-    /// 面板位置（负值 = "还没拖过，用默认位置"）。
+    /// 面板停靠的角落：tl / tr / bl / br（默认右上角）。
     ///
-    /// <para>为什么要持久化：玩家把面板拖到顺手的地方后，重进选人界面它又跳回右上角会很烦。
-    /// 存的是"面板左上角相对选人界面根节点的坐标"。</para>
+    /// <para>用"选角落"而不是自由拖动：位置控制被游戏的 Control 容器布局挡住，
+    /// 而按钮点击是可靠的 —— 详见 <see cref="DragHost"/> 的说明。</para>
     /// </summary>
-    public static float PanelX { get; private set; } = -1f;
+    public static string Corner { get; private set; } = "center";
 
-    /// <summary>面板 Y 坐标（负值 = 未设置）。</summary>
-    public static float PanelY { get; private set; } = -1f;
+    /// <summary>合法取值：center（默认）/ tl / tr / bl / br。</summary>
+    public static readonly string[] Corners = { "center", "tl", "tr", "bl", "br" };
 
-    /// <summary>是否已保存过面板位置。</summary>
-    public static bool HasPanelPosition => PanelX >= 0f && PanelY >= 0f;
+    /// <summary>停靠位的中文名，仅用于日志与提示。</summary>
+    public static string CornerLabel => Corner switch
+    {
+        "tl" => "左上角",
+        "tr" => "右上角",
+        "bl" => "左下角",
+        "br" => "右下角",
+        _ => "屏幕正中",
+    };
+
+
 
     /// <summary>HP 倍率（已钳制到 1.0–5.0）。</summary>
     public static decimal HpMultiplier => Clamp(HpPercent);
@@ -78,8 +87,6 @@ internal static class ScalingConfig
     {
         public int HpPercent { get; set; } = 100;
         public int DamagePercent { get; set; } = 100;
-        public float PanelX { get; set; } = -1f;
-        public float PanelY { get; set; } = -1f;
     }
 
     public static void Load()
@@ -99,10 +106,12 @@ internal static class ScalingConfig
 
             HpPercent = Math.Clamp(dto.HpPercent, MinPercent, MaxPercent);
             DamagePercent = Math.Clamp(dto.DamagePercent, MinPercent, MaxPercent);
-            PanelX = dto.PanelX;
-            PanelY = dto.PanelY;
-            Log.Info($"[EnemyScaling] 已载入配置：HP {HpPercent}% / 伤害 {DamagePercent}%"
-                     + (HasPanelPosition ? $" / 面板位置 ({PanelX:0},{PanelY:0})" : ""));
+            // ⚠ 刻意**不从配置恢复 Corner**：
+            //   用户要求"每次重启游戏面板都回到屏幕正中"，所以角落只在本次运行内有效，
+            //   点角落按钮只是当前会话的临时调整，不跨重启保留。
+            //   （HP/伤害百分比仍然持久化，那两个是需要长期保留的设置。）
+
+            Log.Info($"[EnemyScaling] 已载入配置：HP {HpPercent}% / 伤害 {DamagePercent}%（面板每次启动居中）");
         }
         catch (Exception ex)
         {
@@ -123,19 +132,23 @@ internal static class ScalingConfig
         Save();
     }
 
-    /// <summary>记住玩家拖动后的面板位置。</summary>
-    public static void SetPanelPosition(float x, float y)
+    /// <summary>
+    /// 本次运行内切换角落。
+    ///
+    /// <para>⚠ **不写盘**：用户要求每次重启游戏面板都回到屏幕正中，
+    /// 所以角落是"当前会话的临时状态"。写盘会让下次启动恢复旧角落，与需求相反。</para>
+    /// </summary>
+    public static void SetCorner(string corner)
     {
-        // 忽略异常值（NaN / Infinity），避免写坏配置
-        if (float.IsNaN(x) || float.IsNaN(y) || float.IsInfinity(x) || float.IsInfinity(y))
+        if (Array.IndexOf(Corners, corner) < 0)
         {
             return;
         }
 
-        PanelX = x;
-        PanelY = y;
-        Save();
+        Corner = corner;
     }
+
+
 
     private static void Save()
     {
@@ -145,8 +158,8 @@ internal static class ScalingConfig
             {
                 HpPercent = HpPercent,
                 DamagePercent = DamagePercent,
-                PanelX = PanelX,
-                PanelY = PanelY,
+
+
             }, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception ex)

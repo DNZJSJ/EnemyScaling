@@ -24,3 +24,6 @@ desktop.ini
 
 # 发行的 zip（作为 GitHub Release 附件，不入库）
 dist/
+
+# 工坊上传暂存目录（本地生成，不纳入版本管理）
+workshop-staging/

@@ -22,6 +22,20 @@ internal static class ScalingConfig
     /// <summary>敌人伤害百分比（100 = 原始数值，500 = 5 倍）。</summary>
     public static int DamagePercent { get; private set; } = 100;
 
+    /// <summary>
+    /// 面板位置（负值 = "还没拖过，用默认位置"）。
+    ///
+    /// <para>为什么要持久化：玩家把面板拖到顺手的地方后，重进选人界面它又跳回右上角会很烦。
+    /// 存的是"面板左上角相对选人界面根节点的坐标"。</para>
+    /// </summary>
+    public static float PanelX { get; private set; } = -1f;
+
+    /// <summary>面板 Y 坐标（负值 = 未设置）。</summary>
+    public static float PanelY { get; private set; } = -1f;
+
+    /// <summary>是否已保存过面板位置。</summary>
+    public static bool HasPanelPosition => PanelX >= 0f && PanelY >= 0f;
+
     /// <summary>HP 倍率（已钳制到 1.0–5.0）。</summary>
     public static decimal HpMultiplier => Clamp(HpPercent);
 
@@ -64,6 +78,8 @@ internal static class ScalingConfig
     {
         public int HpPercent { get; set; } = 100;
         public int DamagePercent { get; set; } = 100;
+        public float PanelX { get; set; } = -1f;
+        public float PanelY { get; set; } = -1f;
     }
 
     public static void Load()
@@ -83,7 +99,10 @@ internal static class ScalingConfig
 
             HpPercent = Math.Clamp(dto.HpPercent, MinPercent, MaxPercent);
             DamagePercent = Math.Clamp(dto.DamagePercent, MinPercent, MaxPercent);
-            Log.Info($"[EnemyScaling] 已载入配置：HP {HpPercent}% / 伤害 {DamagePercent}%");
+            PanelX = dto.PanelX;
+            PanelY = dto.PanelY;
+            Log.Info($"[EnemyScaling] 已载入配置：HP {HpPercent}% / 伤害 {DamagePercent}%"
+                     + (HasPanelPosition ? $" / 面板位置 ({PanelX:0},{PanelY:0})" : ""));
         }
         catch (Exception ex)
         {
@@ -104,6 +123,20 @@ internal static class ScalingConfig
         Save();
     }
 
+    /// <summary>记住玩家拖动后的面板位置。</summary>
+    public static void SetPanelPosition(float x, float y)
+    {
+        // 忽略异常值（NaN / Infinity），避免写坏配置
+        if (float.IsNaN(x) || float.IsNaN(y) || float.IsInfinity(x) || float.IsInfinity(y))
+        {
+            return;
+        }
+
+        PanelX = x;
+        PanelY = y;
+        Save();
+    }
+
     private static void Save()
     {
         try
@@ -112,6 +145,8 @@ internal static class ScalingConfig
             {
                 HpPercent = HpPercent,
                 DamagePercent = DamagePercent,
+                PanelX = PanelX,
+                PanelY = PanelY,
             }, new JsonSerializerOptions { WriteIndented = true }));
         }
         catch (Exception ex)

@@ -50,11 +50,14 @@ public static class Entry
             // ④ 自检改在「进入选人界面」时做 —— Init 阶段 ModelDb 还没初始化，
             //    那时读不到怪物列表（模组指南明确的时序坑）。
 
-            // 纯 C# 模组也建议保留：让 .tscn 能加载本程序集里的 Godot 脚本
+            // ④ 关键：让 Godot 认识本程序集里的 Godot 节点类。
+            //    ⚠ DraggablePanel 必须靠这一步注册，否则面板能显示、滑条能用，
+            //      但 **拖不动**（Godot 不会把 _GuiInput 派发给未注册的脚本方法），
+            //      而且不会有任何报错 —— 属于很难从日志看出来的静默失效。
             ScriptManagerBridge.LookupScriptsInAssembly(typeof(Entry).Assembly);
 
             Log.Info($"[{ModId}] 初始化完成；当前 {ScalingConfig.Summary}"
-                     + "（在选人界面右上角调整）");
+                     + "（在选人界面右上角调整，可拖动）");
         }
         catch (Exception ex)
         {
